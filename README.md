@@ -16,6 +16,11 @@ A window will pop up that matches the size of the input image.
 
 ## Change Log
 
+### v2
+
+- Ensures Comments are parsed out of the ASCII version. i.e they are not processed and stripped before algorithm runs.
+
+
 ### v1.0.1
 
 Lol I messed up, and I kept certain values when I shouldn't.

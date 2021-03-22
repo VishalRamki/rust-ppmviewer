@@ -87,8 +87,15 @@ fn read_ppm_file(path: &str) -> io::Result<PPM> {
     for line in reader.lines() {
         //println!("{}", line?);
         let va = line.unwrap_or_default();
+        // @TODO This is because I am assuming all PPM files is going to be
+        // in the P3 format.
         if !skip_first_line {
             skip_first_line = true;
+            continue
+        }
+        // determine if there is a comment at the start of the line;
+        if va.clone().chars().next().unwrap_or_default() == '#' {
+            println!("Found Comment on => {:?}", va.clone());
             continue
         }
 
@@ -105,8 +112,12 @@ fn read_ppm_file(path: &str) -> io::Result<PPM> {
             //println!("This is width & Height: {:?}", dat.max_value);
             continue
         }
-
-        let x : Vec<i32> = va.split(' ').map(|x| x.parse::<i32>().unwrap_or_default()).collect();
+        let offset : usize = if va.clone().find('#').unwrap_or_default() == 0  {
+            va.clone().len()
+         } else {
+            va.clone().find('#').unwrap_or_default()
+         };
+        let x : Vec<i32> = (&va[0..offset]).split(' ').map(|x| x.parse::<i32>().unwrap_or_default()).collect();
         dat.values.push(PpmValue::new(x[0], x[1], x[2]));
     }
     Ok(dat)
