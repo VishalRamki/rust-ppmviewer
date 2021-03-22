@@ -14,12 +14,6 @@ use std::fs::File;
 use std::io::{self, prelude::*, BufReader};
 use std::env;
 
-const WIDTH: u32 = 256;
-const HEIGHT: u32 = 256;
-
-const PROGRAM_DESC: &str = "A Rust-based PPM Image Viewer.";
-const PROGRAM_NAME: &str = "rust-ppmviewer";
-
 /// Representation of the application state
 #[derive(Clone)]
 struct World {
@@ -68,8 +62,6 @@ impl PpmValue {
 
 #[derive(Debug, Clone)]
 enum PpmType {
-    P1, 
-    P2, 
     P3, // RGB color image in ASCII
 }
 
@@ -94,17 +86,17 @@ fn read_ppm_file(path: &str) -> io::Result<PPM> {
 
     for line in reader.lines() {
         //println!("{}", line?);
-        let mut va = line.unwrap_or_default();
+        let va = line.unwrap_or_default();
         if !skip_first_line {
             skip_first_line = true;
             continue
         }
 
         if dat.width == 0 && dat.height == 0 {
-            let mut bar : Vec<i32> = va.split(' ').map(|x| x.parse::<i32>().unwrap()).collect();
+            let bar : Vec<i32> = va.split(' ').map(|x| x.parse::<i32>().unwrap()).collect();
             dat.width = bar[0];
             dat.height = bar[1];
-            //println!("This is width & Height: {:?}", bar);
+            println!("This is width & Height: {:?}", bar);
             continue
         }
 
@@ -114,7 +106,7 @@ fn read_ppm_file(path: &str) -> io::Result<PPM> {
             continue
         }
 
-        let mut x : Vec<i32> = va.split(' ').map(|x| x.parse::<i32>().unwrap_or_default()).collect();
+        let x : Vec<i32> = va.split(' ').map(|x| x.parse::<i32>().unwrap_or_default()).collect();
         dat.values.push(PpmValue::new(x[0], x[1], x[2]));
     }
     Ok(dat)
@@ -155,7 +147,7 @@ fn main() -> Result<(), Error> {
     let mut pixels = {
         let window_size = window.inner_size();
         let surface_texture = SurfaceTexture::new(window_size.width, window_size.height, &window);
-        Pixels::new(WIDTH, HEIGHT, surface_texture)?
+        Pixels::new(w_width as u32, w_height as u32, surface_texture)?
     };
 
     //let mut graphic = aci_ppm::decode(&input_f, afi::ColorChannels::Rgb).unwrap();
@@ -184,10 +176,11 @@ fn main() -> Result<(), Error> {
 
             // Resize the window
             // @TODO: Ensure we can resize the window;
+            /*
             if let Some(size) = input.window_resized() {
                 //pixels.surface_size(size.width, size.height);
             }
-
+            */
             // Update internal state and request a redraw
             world.update();
             window.request_redraw();

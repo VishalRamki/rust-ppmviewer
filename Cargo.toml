@@ -13,3 +13,10 @@ pixels = "*"
 winit = "0.24"
 winit_input_helper = "0.9"
 args = "2.0"
+
+[profile.release]
+debug = false
+panic = "abort"
+
+[profile.release.build-override]
+opt-level = 0

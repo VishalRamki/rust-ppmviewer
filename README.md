@@ -14,6 +14,16 @@ ppmviewer.exe "filename.ppm"
 
 A window will pop up that matches the size of the input image.
 
+## Change Log
+
+### v1.0.1
+
+Lol I messed up, and I kept certain values when I shouldn't.
+
+- Fixes issue where buffer was being generated using (256x256), effectively making your PPM data fit inside this buffer, so any file larger than 256,256 would be forced into it. It would result in misaligned images with parts of the image missing.
+- Added new options inside `Cargo.toml` to reduce the amount of bloat (i.e debug, etc.) from the final executable.
+- Removes issues that the Rust-linter found, just make the code not have many errors.
+
 # Roadmap
 
 Ensure support for the other formats in the family, i.e: portable pixmap format (PPM), the portable graymap format (PGM) and the portable bitmap format (PBM). Right now, I am using the ASCII version of the format as that is what I had been rendering to. I would also like to add support for the binary versions.
