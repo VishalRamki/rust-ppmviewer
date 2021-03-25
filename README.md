@@ -6,6 +6,8 @@ I built this because I couldn't actually find a simple light weight PPM Viewer t
 
 After playing around with it, and reading some of the 'spec' documents (wikipedia), I figured it wouldn't hurt to extend it and create a nice little cross-platform utility for it. I used cross platform libraries, but I'm not sure if it would build. I'll test later versions, but currently there is a Windows build under the releases page.
 
+I found something that looks like the SPEC sheet, so I am also using this as reference. http://paulbourke.net/dataformats/ppm/
+
 # Usage
 
 ```bash
@@ -15,6 +17,14 @@ ppmviewer.exe "filename.ppm"
 A window will pop up that matches the size of the input image.
 
 ## Change Log
+
+### v1.1 => Road to v2.0
+
+- Ensures Comments are parsed out of the ASCII and Binary versions. i.e they are not processed and stripped before algorithm runs.
+- Adds the option to prevent image from being redrawn, as it eats CPU and GPU cycles unnecessarily.
+- Adds the ability to read `P6` PPM File format. That is the Binary version of the `P3` format.
+- Fixes Resize issues, ensures that window can now resize dynamically
+
 
 ### v1.0.1
 
@@ -35,4 +45,5 @@ Ensure support for the other formats in the family, i.e: portable pixmap format 
 
 ## Known Issues
 
-- Resizing the Window causes a crash.
+- Large files take too long to load
+- Opens the file a minimum of two times (once for the header, and then again for the image data)
