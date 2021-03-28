@@ -16,7 +16,14 @@ ppmviewer.exe "filename.ppm"
 
 A window will pop up that matches the size of the input image.
 
+
 ## Change Log
+
+### v1.2 => Road To v2.0
+
+- Changes the way ASCII values are parsed. Previous it would insert random `0`s which would cause images to be misaligned. It now correctly filters out `Whitespace`
+- Added Support for `P2` PPM File Format - Which is the Portable GrayMap. Also supports the `P5` format which is the binary version.
+- Fixed issue where byte position weren't being correctly calculated. This resulted in images being misaligned by a pixel.
 
 ### v1.1 => Road to v2.0
 
