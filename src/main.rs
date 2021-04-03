@@ -16,7 +16,6 @@ use std::fs::File;
 use std::io::{prelude::*, BufReader, SeekFrom};
 use std::env;
 
-
 /// Representation of the application state
 #[derive(Clone)]
 struct World {
@@ -71,10 +70,14 @@ impl PpmValue {
 /// Determines the format type of file based on the the first two bytes
 /// of the Magic Number
 enum PpmType {
+    /// P1 is the Bitmap Data in ASCII
+    P1,
     /// P2 is the Grayscale Data in ASCII
     P2,
     /// P3 is the RGB Image data in ASCII
     P3,
+    /// P4 is the Bitmap Data in Binary Format
+    P4,
     /// P5 is the Grayscale Data in Binary Format
     P5,
     /// P6 is the RGB Image Data in Binary Format
@@ -127,7 +130,7 @@ fn read_ppm_ascii_file(path: &str, ppm_type: PpmType) -> Vec<PpmValue> {
             continue
         }
 
-        if dat.max_value == 0 {
+        if dat.max_value == 0 && dat.ppm_type != PpmType::P1 {
             dat.max_value = va.parse::<i32>().unwrap_or_default();
             //println!("This is width & Height: {:?}", dat.max_value);
             continue
@@ -147,6 +150,16 @@ fn read_ppm_ascii_file(path: &str, ppm_type: PpmType) -> Vec<PpmValue> {
                 dat.values.push(PpmValue::new(((val as f32/dat.max_value as f32) * 255.0) as i32, ((val as f32/dat.max_value as f32) * 255.0) as i32, ((val as f32/dat.max_value as f32) * 255.0) as i32, 1.0));
                 //println!("{:?} / {:?} = {:?}", val as f32, dat.max_value as f32, ((val as f32/dat.max_value as f32) * 255.0) as i32);
             }
+        } else if dat.ppm_type == PpmType::P1 {
+            for val in x {
+                let pixel_data = if val == 0 {
+                    0
+                } else {
+                    255
+                };
+                dat.values.push(PpmValue::new(pixel_data, pixel_data, pixel_data, 1.0));
+                //println!("{:?} / {:?} = {:?}", val as f32, dat.max_value as f32, ((val as f32/dat.max_value as f32) * 255.0) as i32);
+            }
         }
     }
     dat.values
@@ -164,11 +177,17 @@ fn read_ppm_header(path: &str) -> (usize, PPM) {
 
     f.read_exact(&mut magic_number).unwrap();
     let ppm_type = match magic_number {
+        [80, 49] => {
+            PpmType::P1
+        },
         [80, 50] => {
             PpmType::P2
         },
         [80, 51] => {
             PpmType::P3
+        },
+        [80, 52] => {
+            PpmType::P4
         },
         [80, 53] => {
             PpmType::P5
@@ -185,7 +204,7 @@ fn read_ppm_header(path: &str) -> (usize, PPM) {
     // if we have found an ASCII ppm file (p3) then we pass this data onto 
     let mut byte_for = [0; 1]; // important note: 0x32 is the whitespace code.
     while let Ok(n) = f.read(&mut byte_for) {
-        if header.width != 0 && header.height != 0 && header.max_value != 0 {
+        if header.width != 0 && header.height != 0 && (header.max_value != 0 || (header.ppm_type == PpmType::P1 || header.ppm_type == PpmType::P4)) {
             byte_position += 1;
             break;
         }
@@ -252,7 +271,7 @@ fn read_ppm_header(path: &str) -> (usize, PPM) {
                 header.height = String::from_utf8_lossy(&number_byte).parse::<i32>().unwrap_or_default();
                 continue
             }
-            if header.max_value == 0 {
+            if header.max_value == 0 && (header.ppm_type != PpmType::P1 && header.ppm_type != PpmType::P4) {
                 header.max_value = String::from_utf8_lossy(&number_byte).parse::<i32>().unwrap_or_default();
                 continue
             }
@@ -291,9 +310,36 @@ fn read_ppm_binary_image_data(path: &str, ppm_object: PPM, start_position: usize
                 break;
             }
         }
+    } else if ppm_object.ppm_type == PpmType::P4 {
+        let mut byte_for = [0; 1]; // important note: 0x32 is the whitespace code.
+        while let Ok(n) = f.read(&mut byte_for) {
+            if n != 0 {
+                for i in (0..8).rev() {
+                    let pixel_data = get_bit_at(byte_for[0], i).unwrap();
+                    let final_value = if pixel_data {
+                        0
+                    } else {
+                        255
+                    };
+                    img_data.push(PpmValue::new(final_value, final_value, final_value, 1.0));
+                    //println!("{:?} => {:?} = {:?}", byte_for[0], i, get_bit_at(byte_for[0] as u32, i).unwrap());
+                }
+            }
+            else {
+                break;
+            }
+        }
     }
 
     img_data
+}
+
+fn get_bit_at(input: u8, n: u8) -> Result<bool, ()> {
+    if n < 8 {
+        Ok(input & (1 << n) != 0)
+    } else {
+        Err(())
+    }
 }
 
 fn main() -> Result<(), Error> {
@@ -313,10 +359,10 @@ fn main() -> Result<(), Error> {
     }
     let mut world = World::new();
     let (byte_position, mut header) : (usize, PPM) = read_ppm_header(filename);
-    if header.ppm_type == PpmType::P2 || header.ppm_type == PpmType::P3 {
+    if header.ppm_type == PpmType::P1 || header.ppm_type == PpmType::P2 || header.ppm_type == PpmType::P3 {
         header.values = read_ppm_ascii_file(filename, header.clone().ppm_type);
     }
-    else if header.ppm_type == PpmType::P6 || header.ppm_type == PpmType::P5 {
+    else if header.ppm_type == PpmType::P6 || header.ppm_type == PpmType::P5 || header.ppm_type == PpmType::P4 {
         // there is an issue where byte were misaligned.
         header.values = read_ppm_binary_image_data(filename, header.clone(), byte_position);
     }
@@ -407,8 +453,7 @@ impl World {
         if self.single_draw && self.has_been_drawn {
             return
         }
-        if self.frame.as_ref().unwrap().ppm_type == PpmType::P3 || self.frame.as_ref().unwrap().ppm_type == PpmType::P6 || self.frame.as_ref().unwrap().ppm_type == PpmType::P5 ||
-           self.frame.as_ref().unwrap().ppm_type == PpmType::P2 {
+        if self.frame.as_ref().unwrap().ppm_type != PpmType::P0 {
             for (i, pixel) in frame.chunks_exact_mut(4).enumerate() {
                 let frame_instance = self.frame.as_ref().unwrap();
                 let rgba = [frame_instance.values[i].r as u8, frame_instance.values[i].g as u8, frame_instance.values[i].b as u8, 0xff];
