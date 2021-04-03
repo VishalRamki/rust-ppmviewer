@@ -19,6 +19,10 @@ A window will pop up that matches the size of the input image.
 
 ## Change Log
 
+### v1.3 => Road To v2.0
+
+- Added Suport for `P1` PPM File Format - which is the Portable BitMap. Also supports the `P4` which is the binary version.
+
 ### v1.2 => Road To v2.0
 
 - Changes the way ASCII values are parsed. Previous it would insert random `0`s which would cause images to be misaligned. It now correctly filters out `Whitespace`
@@ -53,4 +57,5 @@ Ensure support for the other formats in the family, i.e: portable pixmap format 
 ## Known Issues
 
 - Large files take too long to load
+- P4 File Format has a parse issue where images are misaligned. However, all the PBM files that were provided by Wikipedia and the Spec sheet is accurate and works.
 - Opens the file a minimum of two times (once for the header, and then again for the image data)
